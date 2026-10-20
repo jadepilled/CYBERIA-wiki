@@ -1,3 +1,8 @@
+@font-face {
+  font-family: "VCR OSD Mono";
+  src: url("/static/fonts/VCR_OSD_MONO_1.001.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
 :root {
   --bg: #2a1d14;
   --panel: #33251a;
@@ -16,7 +21,9 @@
 
   --head: "Pixelify Sans", "Silkscreen", ui-monospace, monospace;
   --pix: "Silkscreen", "Pixelify Sans", ui-monospace, monospace;
-  --body: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --body: "VT323", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --vcr: "VCR OSD Mono", "Silkscreen", ui-monospace, monospace;
+  --grid: #3d2c1f;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --panel-solid: #33251a;
 
@@ -27,9 +34,14 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-padding-top: calc(var(--top-h) + 16px); }
 body {
-  background: var(--bg);
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    var(--bg);
+  background-size: 48px 48px, 48px 48px, auto;
+  background-position: center top;
   color: var(--text);
-  font: 300 1.0625rem/1.6 var(--body);
+  font: 400 1.3rem/1.4 var(--body);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
@@ -48,7 +60,7 @@ code, kbd { font-family: var(--mono); font-size: 0.85em; }
   display: flex; align-items: center; gap: 2rem; padding: 0 var(--gutter);
   background: rgba(42, 29, 20, 0.88); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line);
 }
-.logo { font: 700 1.05rem/1 var(--pix); color: var(--white); text-decoration: none; white-space: nowrap; }
+.logo { font: 400 1.25rem/1 var(--vcr); color: var(--white); text-decoration: none; white-space: nowrap; }
 .logo em { font: 400 0.55rem var(--pix); font-style: normal; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey); margin-left: 0.6rem; vertical-align: 0.25em; }
 .nav nav { display: flex; gap: 1.6rem; margin-left: auto; }
 .nav nav a { font-family: var(--pix); font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; color: var(--grey); transition: color 0.15s; }
@@ -65,7 +77,7 @@ code, kbd { font-family: var(--mono); font-size: 0.85em; }
   width: 100%; height: 38px; padding: 0 2.2rem 0 0.9rem;
   background: var(--panel-solid); color: var(--white);
   border: 2px solid var(--line); border-radius: 0;
-  font: 400 0.9rem var(--body);
+  font: 400 1.15rem var(--body);
 }
 .search input::placeholder { color: var(--muted); }
 .search input:focus { outline: none; border-color: var(--accent); }
@@ -90,15 +102,15 @@ code, kbd { font-family: var(--mono); font-size: 0.85em; }
 .side .subnav a:hover { color: var(--white); }
 .main { padding: 2rem 0 4rem; min-width: 0; max-width: 980px; }
 
-.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; padding: 1.25rem var(--gutter); border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 2rem; padding: 1.25rem var(--gutter); border-top: 1px solid var(--line); color: var(--muted); font-size: 1.1rem; background: var(--bg); }
 
 /* Headings */
 h1 { font: 900 clamp(2.2rem, 5vw, 3.4rem)/1.02 var(--head); color: var(--white); letter-spacing: -0.01em; }
 h2 { font: 800 1.35rem/1.2 var(--head); color: var(--white); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
 h2::before { content: ""; width: 18px; height: 3px; background: var(--accent); flex: none; }
 h3 { font: 600 0.78rem var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey); margin: 1.25rem 0 0.6rem; }
-.lead { font-size: 1.15rem; color: var(--text); max-width: 62ch; margin-top: 0.75rem; }
-.note { color: var(--muted); font-size: 0.85rem; margin-top: 0.6rem; }
+.lead { font-size: 1.45rem; color: var(--text); max-width: 62ch; margin-top: 0.75rem; }
+.note { color: var(--muted); font-size: 1.1rem; margin-top: 0.6rem; }
 .crumbs { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 0.6rem; }
 .crumbs a { color: var(--grey); text-decoration: none; }
 .crumbs a:hover { color: var(--white); }
@@ -107,7 +119,7 @@ h3 { font: 600 0.78rem var(--body); letter-spacing: 0.14em; text-transform: uppe
 .home-hero { padding: 2.5rem 0 2rem; }
 .home-hero h1 { font-size: clamp(2.8rem, 7vw, 4.6rem); }
 .home-hero h1 span { color: var(--accent); }
-.search-cta { margin-top: 1.5rem; display: inline-flex; gap: 1.5rem; align-items: center; background: var(--panel); border: 1px solid var(--line); color: var(--grey); font: 400 1rem var(--body); padding: 0.8rem 1rem; cursor: pointer; }
+.search-cta { margin-top: 1.5rem; display: inline-flex; gap: 1.5rem; align-items: center; background: var(--panel); border: 1px solid var(--line); color: var(--grey); font: 400 1.25rem var(--body); padding: 0.8rem 1rem; cursor: pointer; }
 .search-cta:hover { border-color: var(--line-hi); color: var(--white); }
 .search-cta kbd { border: 1px solid var(--line); padding: 0 0.35rem; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); margin-top: 1.5rem; }
@@ -115,8 +127,8 @@ h3 { font: 600 0.78rem var(--body); letter-spacing: 0.14em; text-transform: uppe
 .tile:hover { background: var(--panel); }
 .tile h2 { font-size: 1.15rem; margin-bottom: 0.35rem; }
 .tile h2::before { display: none; }
-.tile p { color: var(--grey); font-size: 0.92rem; line-height: 1.45; }
-.tile .count { position: absolute; top: 1.2rem; right: 1.2rem; color: var(--muted); font-size: 0.8rem; }
+.tile p { color: var(--grey); font-size: 1.15rem; line-height: 1.3; }
+.tile .count { position: absolute; top: 1.2rem; right: 1.2rem; color: var(--muted); font-size: 1.05rem; }
 
 /* Lists */
 .page-head { margin-bottom: 2rem; }
@@ -146,8 +158,8 @@ h3 { font: 600 0.78rem var(--body); letter-spacing: 0.14em; text-transform: uppe
 .stat { background: var(--bg); padding: 0.8rem 1rem; }
 .stat dt { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--grey); margin-bottom: 0.2rem; }
 .stat dd { font: 800 1.35rem/1.15 var(--head); color: var(--white); font-variant-numeric: tabular-nums; }
-.stat dd small { display: block; font: 400 0.8rem var(--body); color: var(--muted); margin-top: 0.2rem; }
-.stat.pending dd { font: 400 0.95rem var(--body); color: var(--muted); }
+.stat dd small { display: block; font: 400 1.05rem var(--body); color: var(--muted); margin-top: 0.2rem; }
+.stat.pending dd { font: 400 1.2rem var(--body); color: var(--muted); }
 
 .block { padding: 2rem 0 0.5rem; border-top: 1px solid var(--line); margin-top: 1.75rem; }
 details.block:not([open]) { padding-bottom: 0; }
@@ -217,7 +229,7 @@ table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
 
 /* Sounds */
 .sounds { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.play { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--panel); border: 1px solid var(--line); color: var(--white); font: 500 0.95rem var(--body); padding: 0.5rem 0.9rem; cursor: pointer; }
+.play { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--panel); border: 1px solid var(--line); color: var(--white); font: 400 1.15rem var(--body); padding: 0.5rem 0.9rem; cursor: pointer; }
 .play:hover, .play[aria-pressed="true"] { border-color: var(--accent-hi); }
 
 /* Links and recipes: each recipe is a self-contained card */
@@ -228,7 +240,7 @@ table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
 .recipe .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.6rem; }
 .recipe .slot { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
 .recipe .op { color: var(--accent-hi); font-weight: 700; font-size: 1.05rem; }
-.recipe .ing, .recipe .group { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.22rem 0.55rem; border: 1px solid var(--line); background: var(--raise); font-size: 0.88rem; color: var(--text); text-decoration: none; }
+.recipe .ing, .recipe .group { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.22rem 0.55rem; border: 1px solid var(--line); background: var(--raise); font-size: 1.1rem; color: var(--text); text-decoration: none; }
 .recipe .ing a { color: var(--text); text-decoration: none; }
 .recipe .ing a:hover, .recipe .group:hover { color: var(--white); }
 .recipe .ing .ic, .recipe .group .ic { color: var(--grey); font-size: 1rem; }
@@ -241,7 +253,7 @@ table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
 .chips.groups { margin-bottom: 1rem; }
 .chips.groups .chip { display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none; }
 .chips.groups .chip small { color: var(--muted); }
-.filter { width: 100%; max-width: 420px; height: 38px; margin-bottom: 1rem; padding: 0 0.9rem; background: var(--panel); color: var(--white); border: 1px solid var(--line); font: 400 0.95rem var(--body); }
+.filter { width: 100%; max-width: 420px; height: 38px; margin-bottom: 1rem; padding: 0 0.9rem; background: var(--panel); color: var(--white); border: 1px solid var(--line); font: 400 1.15rem var(--body); }
 
 /* Prose */
 .prose { max-width: 70ch; }
@@ -294,14 +306,14 @@ h3 { font-size: 0.58rem; letter-spacing: 0.12em; }
 .search-cta:hover { border-color: var(--accent); }
 .search-cta kbd { font: 0.6rem var(--pix); border-color: var(--line-hi); }
 .side a { font-family: var(--pix); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.4rem 0 0.4rem 0.8rem; }
-.side .subnav a { font-family: var(--body); font-size: 0.8rem; letter-spacing: 0; text-transform: none; }
+.side .subnav a { font-family: var(--body); font-size: 1.05rem; letter-spacing: 0; text-transform: none; }
 .filter, .play { border-width: 2px; }
 .recipe { border-width: 2px; box-shadow: 3px 3px 0 var(--line-hi); }
 .tiles, .facts, .carried, .recoil, .grid { box-shadow: 4px 4px 0 var(--line-hi); }
 
 /* CYBERIA wordmark: copper to cream, with a quick prismatic sweep now and then */
 .cy {
-  position: relative; display: inline-block; font-family: var(--pix); font-weight: 700; letter-spacing: 0.16em; text-indent: 0;
+  position: relative; display: inline-block; font-family: var(--vcr); font-weight: 400; letter-spacing: 0.18em; text-indent: 0;
   background: linear-gradient(90deg, var(--copper) 0%, #d9a773 38%, var(--accent-hi) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
@@ -327,3 +339,6 @@ body::after {
 
 /* Pixelify Sans ships odd fi/fl ligatures */
 h1, h2, h3, .cy, .logo, .wordmark, .srv-map, .stat dd, .card h3, .pop h4, .tile h2, .panel h2, .facts dd { font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0; }
+
+/* Flat blocks over the grid */
+.list, .data, .carried, .prose table, .server, .variant, .facts, .recipe, .media { background: var(--bg); }
