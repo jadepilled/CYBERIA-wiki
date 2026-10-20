@@ -325,20 +325,12 @@ h3 { font-size: 0.95rem; letter-spacing: 0.14em; }
 /* CYBERIA wordmark: copper to cream, with a quick prismatic sweep now and then */
 .cy {
   position: relative; display: inline-block; font-family: var(--vcr); font-weight: 400; letter-spacing: 0.18em; text-indent: 0;
-  background: linear-gradient(100deg, var(--copper) 0%, #d9a773 22%, var(--accent-hi) 48%, #d9a773 70%, var(--copper) 100%);
-  background-size: 320% 320%; background-position: 0% 50%;
+  --cy-base: #5a4733; --cy-lit: 246, 234, 213;
+  background:
+    radial-gradient(var(--lr, 900px) circle at var(--lx, 50%) var(--ly, 160%),
+      rgba(var(--cy-lit), var(--li, 0.6)) 0%, rgba(var(--cy-lit), var(--li, 0.6)) var(--ln, 40%), rgba(var(--cy-lit), calc(var(--li, 0.6) * 0.18)) 100%),
+    linear-gradient(var(--cy-base), var(--cy-base));
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: cy-drift 23s ease-in-out infinite;
-}
-/* the gradient wanders: uneven stops so the motion never settles into a beat */
-@keyframes cy-drift {
-  0% { background-position: 0% 50%; }
-  17% { background-position: 38% 20%; }
-  31% { background-position: 14% 76%; }
-  48% { background-position: 71% 44%; }
-  63% { background-position: 46% 90%; }
-  79% { background-position: 92% 30%; }
-  100% { background-position: 0% 50%; }
 }
 .cy::after {
   content: attr(data-text); position: absolute; inset: 0; pointer-events: none;
@@ -358,7 +350,7 @@ body::after {
   content: ""; position: fixed; inset: 0; z-index: 2000; pointer-events: none; opacity: 0.22;
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 1px, transparent 1px 3px);
 }
-@media (prefers-reduced-motion: reduce) { .cy, .cy::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .cy::after { animation: none; } }
 
 /* Pixelify Sans ships odd fi/fl ligatures */
 h1, h2, h3, .cy, .logo, .wordmark, .srv-map, .stat dd, .card h3, .pop h4, .tile h2, .panel h2, .facts dd { font-variant-ligatures: none; font-feature-settings: "liga" 0, "clig" 0; }
@@ -372,3 +364,6 @@ h1, h2, h3, .cy, .logo, .wordmark, .srv-map, .stat dd, .card h3, .pop h4, .tile 
 .count time { font-family: var(--body); font-size: 1.15rem; line-height: 1; color: var(--accent); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
 .count:hover time { color: var(--white); }
 @media (max-width: 960px) { .count { display: none; } }
+
+/* Cursor light on the header */
+.nav::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(360px circle at var(--mx, -999px) var(--my, -999px), rgba(246, 234, 213, 0.085), transparent 70%); }

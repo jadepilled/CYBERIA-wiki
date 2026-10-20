@@ -6,18 +6,20 @@
   <title>{% if page.url != "/" %}{{ page.title }} · {% endif %}CYBERIA Wiki</title>
   {% if item and item.description %}<meta name="description" content="{{ item.description }}">{% endif %}
   <meta name="theme-color" content="#181009">
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/static/favicon.gif" type="image/gif">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" sizes="any">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/wiki.css">
   <script src="/static/wiki.js" defer></script>
   <script src="/static/countdown.js" defer></script>
+  <script src="/static/light.js" defer></script>
   {% block head %}{% endblock %}
 </head>
 <body{% if preview %} class="preview"{% endif %}>
   <header class="nav">
-    <a href="https://cyberia.gg" class="logo" aria-label="CYBERIA home"><span class="cy" data-text="CYBERIA">CYBERIA</span><em>Wiki</em></a>
+    <a href="https://cyberia.gg" class="logo" aria-label="CYBERIA home"><span class="cy" data-text="CYBERIA" data-light>CYBERIA</span><em>Wiki</em></a>
     <a class="count" href="https://cyberia.gg/#play" hidden><span>Release</span><time id="countdown" datetime="2026-11-01T07:00:00Z">--</time></a>
     <div class="search" role="search">
       <input id="q" type="search" placeholder="Search" autocomplete="off" spellcheck="false" aria-label="Search the wiki" aria-controls="results">
