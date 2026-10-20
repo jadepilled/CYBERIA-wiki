@@ -290,19 +290,19 @@ table.data { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
 .list small { white-space: nowrap; }
 
 /* CYBERIA type: VCR OSD Mono headings, VT323 everywhere else */
-h1, h2, .stat dd, .card h3, .tile h2 { font-family: var(--vcr); font-weight: 400; }
-h1 { letter-spacing: 0.04em; font-size: clamp(2rem, 4.5vw, 3rem); }
-h2 { font-size: 1.3rem; letter-spacing: 0.03em; }
+h1, h2, .stat dd, .card h3, .tile h2 { font-family: var(--body); font-weight: 400; }
+h1 { letter-spacing: 0.02em; font-size: clamp(2.6rem, 6vw, 4rem); }
+h2 { font-size: 1.7rem; letter-spacing: 0.08em; text-transform: uppercase; }
 h2::before { height: 6px; background: var(--accent); box-shadow: 2px 2px 0 var(--line-hi); }
 h3, .stat dt, .facts dt, .data th, .crumbs, .chip, .cls { font-family: var(--body); font-weight: 400; }
 h3 { font-size: 0.95rem; letter-spacing: 0.14em; }
 .stat dt, .data th { font-size: 0.9rem; letter-spacing: 0.12em; }
-.stat dd { font-size: 1.3rem; }
+.stat dd { font-size: 1.7rem; }
 .chip { font-size: 1rem; letter-spacing: 0.06em; padding: 0.1rem 0.5rem; }
 .chip.red, .chip.accent { border-color: var(--accent); }
 .crumbs { font-size: 0.95rem; }
-.tile h2 { font-size: 1.2rem; }
-.home-hero h1 { font-size: clamp(2.6rem, 6vw, 4rem); }
+.tile h2 { font-size: 1.5rem; }
+.home-hero h1 { font-size: clamp(3rem, 7vw, 4.8rem); }
 .home-hero h1 .cy { font-size: 1em; }
 .home-hero h1 span { color: inherit; }
 .search-cta { border: 2px solid var(--line); box-shadow: 3px 3px 0 var(--line-hi); font-family: var(--body); }
