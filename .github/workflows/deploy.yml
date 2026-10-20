@@ -26,6 +26,8 @@ jobs:
       - id: pages
         uses: actions/configure-pages@v5
       - run: python build.py --base "${{ steps.pages.outputs.base_path }}"
+      # keep the custom domain on both deployment routes
+      - run: cp CNAME _site/ 2>/dev/null || true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
