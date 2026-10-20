@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_macros.html" import crumbs, itemlink, stat %}
+{% block main %}
+{% set D = disease %}{% set A = D.agent %}
+{{ crumbs(cat, page) }}
+<header class="item-head">
+  <h1>{{ D.name }}</h1>
+  <p class="meta"><code class="cls">{{ D.modifier.class }}</code>{% for s in D.symptoms %}<span class="chip">{{ s | capitalize }}</span>{% endfor %}</p>
+</header>
+{% if body %}<section class="prose lead-prose">{{ body | safe }}</section>{% endif %}
+
+{% if A %}
+<details class="block" open>
+  <summary><h2>Infection</h2></summary>
+  <dl class="facts row">
+    {% if D.activate %}{{ stat("Symptoms start at", D.activate ~ " agents", "of " ~ A.MaxCount ~ " max") }}{% endif %}
+    {% if D.deactivate is number %}{{ stat("Symptoms stop below", D.deactivate ~ " agents") }}{% endif %}
+    {% if A.potency %}{{ stat("Immunity stops it at", ["Never", "Great", "High or better", "Medium or better", "Low or better"][["great", "high", "medium", "low", "critical"].index(A.potency)]) }}{% endif %}
+    {% if A.Invasibility is number %}{{ stat("Growth", A.Invasibility | num(3), "agents/s" ~ (" · varies" if A.dynamicGrowth else "")) }}{% endif %}
+    {% if A.DieOffSpeed is number %}{{ stat("Natural die-off", A.DieOffSpeed | num(3), "agents/s") }}{% endif %}
+    {% if A.TransferabilityOut is number %}{{ stat("Contagiousness", A.TransferabilityOut | pct) }}{% endif %}
+  </dl>
+  {% if D.activate and A.Invasibility %}
+  <p class="note">At the base growth rate an infection takes about {{ ((D.activate / A.Invasibility) / 60) | round | int }} min to go from zero to symptoms.{% if A.potency == "great" %} Immunity alone never stops it.{% endif %}</p>
+  {% endif %}
+</details>
+{% endif %}
+
+{% if D.treatments %}
+<details class="block" open>
+  <summary><h2>Treatment</h2></summary>
+  <table class="data">
+    <thead><tr><th>Item</th><th class="n">Cleared per dose</th><th class="n">Doses from symptoms</th><th class="n">Resistance</th></tr></thead>
+    <tbody>
+    {% for t in D.treatments %}<tr><td>{{ itemlink(t.item) }}{% if t.drug != "direct" %} <span class="muted">{{ t.drug }}</span>{% endif %}</td><td class="n">{{ t.perDose }}{% if t.delay %} <span class="muted">after {{ t.delay }} s</span>{% endif %}{% if t.varies %} <span class="muted">approx.</span>{% endif %}</td><td class="n">{{ t.doses or "–" }}</td><td class="n">{{ t.resistance | pct }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</details>
+{% endif %}
+
+{% if D.constants %}
+<details class="block" open>
+  <summary><h2>Effects</h2></summary>
+  <table class="data">
+    <tbody>{% for label, v, unit in D.constants %}<tr><td>{{ label }}</td><td class="n">{{ v | unit(unit) }}</td></tr>{% endfor %}</tbody>
+  </table>
+</details>
+{% endif %}
+
+{% endblock %}

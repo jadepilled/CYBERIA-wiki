@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "_macros.html" import recipe, icon %}
+{% block main %}
+<header class="page-head">
+  <h1>Crafting</h1>
+  <p class="lead">{{ recipes | length }} recipes. Combine the two ingredients in your hands or inventory.</p>
+</header>
+{% if groups %}<p class="chips groups">{% for g, url, n in groups %}<a class="chip" href="{{ url }}">{{ icon("knife") }} {{ g }} <small>{{ n }} items</small></a>{% endfor %}</p>{% endif %}
+<input class="filter" type="search" placeholder="Filter recipes" aria-label="Filter recipes" data-filter="#recipes li">
+<ul class="recipes" id="recipes">
+  {% for r in recipes | sort(attribute="title") %}{{ recipe(r) }}{% endfor %}
+</ul>
+{% endblock %}

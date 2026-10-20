@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="home-hero">
+  <h1><span class="cy" data-text="CYBERIA">CYBERIA</span> Wiki</h1>
+  <p class="lead">Stats, loot and mechanics for CYBERIA, taken from the game files and the live server economy.</p>
+  <button class="search-cta" type="button" data-focus-search>Search items, weapons, diseases <kbd>/</kbd></button>
+</section>
+<section class="tiles">
+  {% for key, name, blurb in categories %}
+  <a class="tile" href="/{{ key }}/">
+    <h2>{{ name }}</h2>
+    <p>{{ blurb }}</p>
+    {% if counts[key] %}<span class="count">{{ counts[key] }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</section>
+{% if body %}<section class="prose">{{ body | safe }}</section>{% endif %}
+{% endblock %}

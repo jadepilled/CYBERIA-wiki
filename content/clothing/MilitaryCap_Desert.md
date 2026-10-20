@@ -1,0 +1,3 @@
+---
+class: MilitaryCap_Desert
+---

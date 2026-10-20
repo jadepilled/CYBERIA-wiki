@@ -1,0 +1,193 @@
+"""Prepare the render work tree: one folder per wiki item with its converted model.
+
+    python pipeline/layout.py --render <trimmed render folder> [--all] [--only AKM]
+
+Creates pipeline/work/<category>/<Class>/model.glb + item.json for every wiki page with a
+`class` (or, with --all, every public config class that has a model), applying the class's
+hiddenSelectionsTextures so colour variants render correctly. Then run blender_render.py.
+
+Weapons are assembled from their proxies: each proxy in the model marks an attachment slot, and
+the attachment PureZ spawns there most often (buttstock, handguard and magazine by default;
+--slots to change) is merged into the GLB at the proxy's position and orientation.
+
+Binarised (ODOL) models are decoded on the fly by odol.py, so the render folder can be used as is.
+"""
+import argparse, glob, json, os, re, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import p3d  # noqa: E402
+
+# Wiki category from a model's game path, for --all
+PATH_CATEGORIES = [
+    (r"dz/weapons/(attachments|optics)", "attachments"), (r"dz/weapons/ammunition", "ammunition"),
+    (r"dz/weapons/", "weapons"), (r"dz/characters/", "clothing"), (r"dz/vehicles/", "vehicles"),
+    (r"dz/gear/medical", "medical"), (r"dz/gear/(food|drinks)", "food"), (r"dz/", "gear"),
+]
+
+
+def front_matter(path):
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    meta = {}
+    if text.startswith("---"):
+        for line in text[3:text.find("\n---", 3)].strip().splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                meta[k.strip()] = v.strip()
+    return meta
+
+
+def wiki_items():
+    out = {}
+    for path in glob.glob(os.path.join(ROOT, "content", "**", "*.md"), recursive=True):
+        meta = front_matter(path)
+        if meta.get("class"):
+            cat = meta.get("category") or os.path.relpath(path, os.path.join(ROOT, "content")).split(os.sep)[0]
+            out[meta["class"]] = {"category": cat, "model": meta.get("model")}
+    return out
+
+
+def configs():
+    path = os.path.join(ROOT, "data", "configs.json")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    merged = {}
+    for sec in ("weapons", "magazines", "vehicles"):
+        merged.update(data.get(sec, {}))
+    return merged
+
+
+# Slots filled in a weapon render, matched against the attachment's inventorySlot
+DEFAULT_SLOTS = ["buttstock", "handguard", "magazine"]
+
+
+def model_key(model):
+    return re.sub(r"\.p3d$", "", (model or "").replace("/", "\\").lstrip("\\").lower())
+
+
+def spawn_groups():
+    path = os.path.join(ROOT, "data", "mission.json")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f).get("purez", {}).get("spawnable", {})
+
+
+def pick_attachments(cls, c, lod, cfg, by_model, spawnable, slots):
+    """Attachment per proxy slot: the one PureZ fits most often, else the first the config allows.
+    Returns [{slot, class, proxy, origin, frame}]."""
+    chances = {}   # attachment class -> chance it spawns on this weapon
+    for g in (spawnable.get(cls) or {}).get("groups", []):
+        for item, share in g.get("items", []):
+            chances[item] = max(chances.get(item, 0), g.get("chance", 0) * share)
+    allowed = {a.lower() for a in c.get("attachments") or []} | {"magazine"}
+    out, used = [], set()
+    for px in p3d.proxies(lod):
+        holders = by_model.get(px["path"], [])
+        slot = next((sl for h in holders for sl in (cfg[h].get("inventorySlot") or []) if sl.lower() in allowed), None)
+        if not slot:
+            continue
+        want = next((w for w in slots if w in slot.lower()), None)
+        if not want or slot.lower() in used:
+            continue
+        if want == "magazine":
+            cands = [m for m in c.get("magazines") or [] if m in cfg]
+        else:
+            cands = [k for k, v in cfg.items() if slot.lower() in [x.lower() for x in v.get("inventorySlot") or []] and v.get("model")]
+        if not cands:
+            continue
+        best = max(cands, key=lambda k: (chances.get(k, 0), -cands.index(k)))
+        used.add(slot.lower())
+        out.append({"slot": slot, "class": best, "proxy": px["name"], "origin": px["origin"], "frame": px["frame"],
+                    "chance": round(chances.get(best, 0), 3)})
+    return out
+
+
+def category_for(model):
+    m = (model or "").replace("\\", "/").lower().lstrip("/")
+    return next((cat for rx, cat in PATH_CATEGORIES if re.search(rx, m)), "gear")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--render", required=True, help="render folder from dayz_trim.py (contains DZ/)")
+    ap.add_argument("--work", default=os.path.join(HERE, "work"))
+    ap.add_argument("--all", action="store_true", help="every public config class with a model")
+    ap.add_argument("--only")
+    ap.add_argument("--slots", default=",".join(DEFAULT_SLOTS), help="attachment slots merged into weapon renders (comma list, '' for none)")
+    ap.add_argument("--proxy-frame", default="triangle", choices=["identity", "triangle"],
+                    help="rotate attachments by the proxy's transform (the default; it comes straight from the ODOL file), or only move them to its origin")
+    a = ap.parse_args()
+    slots = [x.strip().lower() for x in a.slots.split(",") if x.strip()]
+
+    cfg = configs()
+    items = wiki_items()
+    if a.all:
+        for cls, c in cfg.items():
+            if c.get("model") and cls not in items:
+                items[cls] = {"category": category_for(c["model"]), "model": None}
+    if a.only:
+        items = {k: v for k, v in items.items() if k == a.only}
+
+    files = p3d.Files(a.render)
+    by_model = {}
+    for k, v in cfg.items():
+        if v.get("model"):
+            by_model.setdefault(model_key(v["model"]), []).append(k)
+    spawnable = spawn_groups()
+    stats = {"converted": 0, "odol": 0, "no model": 0, "missing file": 0, "failed": 0}
+    for cls, it in sorted(items.items()):
+        c = cfg.get(cls, {})
+        model = it.get("model") or c.get("model")
+        if not model:
+            stats["no model"] += 1
+            continue
+        src = files.find(model) or files.find(model + ".p3d")
+        if not src:
+            stats["missing file"] += 1
+            print(f"missing  {cls}: {model}")
+            continue
+        out_dir = os.path.join(a.work, it["category"], cls)
+        hidden = dict(zip([s.lower() for s in c.get("hiddenSelections") or []], c.get("hiddenSelectionsTextures") or []))
+        mats = dict(zip([s.lower() for s in c.get("hiddenSelections") or []], c.get("hiddenSelectionsMaterials") or []))
+        try:
+            lod = p3d.best_lod(p3d.read_p3d(src))
+            if not lod:
+                raise ValueError("no visual LOD")
+            parts, fitted = [], []
+            if it["category"] == "weapons" and slots and c.get("attachments"):
+                for att in pick_attachments(cls, c, lod, cfg, by_model, spawnable, slots):
+                    ac = cfg[att["class"]]
+                    asrc = files.find(ac["model"])
+                    if not asrc:
+                        print(f"  missing attachment model {att['class']}: {ac['model']}")
+                        continue
+                    alod = p3d.best_lod(p3d.read_p3d(asrc))
+                    if not alod:
+                        continue
+                    parts.append({"lod": alod, "name": att["class"], "origin": att["origin"],
+                                  "frame": att["frame"] if a.proxy_frame == "triangle" else None,
+                                  "hidden": dict(zip([x.lower() for x in ac.get("hiddenSelections") or []], ac.get("hiddenSelectionsTextures") or [])),
+                                  "mats": dict(zip([x.lower() for x in ac.get("hiddenSelections") or []], ac.get("hiddenSelectionsMaterials") or []))})
+                    fitted.append({k: att[k] for k in ("slot", "class", "proxy", "chance")} | {"origin": [round(x, 4) for x in att["origin"]]})
+            info = p3d.export(lod, os.path.join(out_dir, "model.glb"), files, hidden, mats, parts)
+            with open(os.path.join(out_dir, "item.json"), "w", encoding="utf-8") as f:
+                json.dump({"class": cls, "category": it["category"], "model": model, "hidden": hidden, "fitted": fitted, **info}, f, indent=1)
+            stats["converted"] += 1
+            extra = f" + {', '.join(x['class'] for x in fitted)}" if fitted else ""
+            print(f"ok       {it['category']}/{cls} ({info['faces']} faces){extra}")
+        except NotImplementedError as e:
+            stats["odol"] += 1
+            print(f"odol     {cls}: {e}")
+        except Exception as e:
+            stats["failed"] += 1
+            print(f"failed   {cls}: {e}")
+    print(stats)
+
+
+if __name__ == "__main__":
+    main()
