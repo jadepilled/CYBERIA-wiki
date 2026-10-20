@@ -32,7 +32,16 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-padding-top: calc(var(--top-h) + 16px); }
+html, body { height: 100%; overflow: hidden; }
+/* The page scrolls below the header, so the scrollbar sits inside the page */
+.scroll-area { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; scroll-padding-top: 16px; overscroll-behavior: contain; }
+
+/* Scrollbars, everywhere */
+* { scrollbar-width: thin; scrollbar-color: var(--line-hi) var(--panel); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--panel); }
+::-webkit-scrollbar-thumb { background: var(--line-hi); border: 2px solid var(--panel); }
+::-webkit-scrollbar-thumb:hover { background: var(--grey); }
 body {
   background:
     linear-gradient(var(--grid) 1px, transparent 1px),
@@ -43,7 +52,6 @@ body {
   color: var(--text);
   font: 400 1.3rem/1.4 var(--body);
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -93,7 +101,7 @@ code, kbd { font-family: var(--mono); font-size: 0.85em; }
 
 /* Layout */
 .layout { flex: 1; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 2.5rem; padding: 0 var(--gutter); max-width: 1240px; width: 100%; margin: 0 auto; }
-.side { position: sticky; top: var(--top-h); align-self: start; display: flex; flex-direction: column; padding: 2rem 0; }
+.side { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; padding: 2rem 0; }
 .side a { color: var(--grey); text-decoration: none; padding: 0.3rem 0 0.3rem 0.8rem; border-left: 2px solid transparent; font-weight: 500; font-size: 0.95rem; }
 .side a:hover { color: var(--white); }
 .side a[aria-current] { color: var(--white); border-left-color: var(--accent); }
@@ -337,12 +345,12 @@ h3 { font-size: 0.95rem; letter-spacing: 0.14em; }
   background: linear-gradient(100deg, transparent 38%, #ffb8b8 43%, #fff2a8 47%, #b8ffd9 51%, #b8dcff 55%, #e6bfff 59%, transparent 64%);
   background-size: 300% 100%; background-position: 160% 0;
   -webkit-background-clip: text; background-clip: text; color: transparent; opacity: 0;
-  animation: cy-shine 13s linear infinite;
+  animation: cy-shine 31s linear infinite;
 }
 @keyframes cy-shine {
-  0%, 90% { background-position: 160% 0; opacity: 0; }
-  90.5% { opacity: 1; }
-  99.5% { background-position: -60% 0; opacity: 1; }
+  0%, 97.6% { background-position: 160% 0; opacity: 0; }
+  97.8% { opacity: 1; }
+  99.6% { background-position: -60% 0; opacity: 1; }
   100% { opacity: 0; }
 }
 /* Scanlines */
@@ -357,3 +365,10 @@ h1, h2, h3, .cy, .logo, .wordmark, .srv-map, .stat dd, .card h3, .pop h4, .tile 
 
 /* Flat blocks over the grid */
 .list, .data, .carried, .prose table, .server, .variant, .facts, .recipe, .media { background: var(--bg); }
+
+/* Release countdown: same spot in every header */
+.count { display: inline-flex; align-items: baseline; gap: 0.6rem; margin-left: 0.5rem; padding-left: 1.2rem; border-left: 2px solid var(--line); color: var(--grey); text-decoration: none; white-space: nowrap; }
+.count span { font-family: var(--pix); font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.count time { font-family: var(--body); font-size: 1.15rem; line-height: 1; color: var(--accent); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.count:hover time { color: var(--white); }
+@media (max-width: 960px) { .count { display: none; } }
