@@ -4,11 +4,11 @@
   font-weight: 400; font-style: normal; font-display: swap;
 }
 :root {
-  --bg: #2a1d14;
-  --panel: #33251a;
-  --raise: #3d2d20;
-  --line: #4a3729;
-  --line-hi: #6a5140;
+  --bg: #181009;
+  --panel: #211610;
+  --raise: #2a1d15;
+  --line: #3a2a1e;
+  --line-hi: #574131;
   --white: #f6ead5;
   --text: #e8d9c0;
   --grey: #b59f82;
@@ -23,9 +23,9 @@
   --pix: "Silkscreen", "Pixelify Sans", ui-monospace, monospace;
   --body: "VT323", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --vcr: "VCR OSD Mono", "Silkscreen", ui-monospace, monospace;
-  --grid: #3d2c1f;
+  --grid: #2a1c12;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --panel-solid: #33251a;
+  --panel-solid: #211610;
 
   --top-h: 56px;
   --gutter: clamp(16px, 4vw, 48px);
@@ -58,7 +58,7 @@ code, kbd { font-family: var(--mono); font-size: 0.85em; }
 .nav {
   position: sticky; top: 0; z-index: 20; height: var(--top-h);
   display: flex; align-items: center; gap: 2rem; padding: 0 var(--gutter);
-  background: rgba(42, 29, 20, 0.88); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line);
+  background: rgba(24, 16, 9, 0.88); backdrop-filter: blur(8px); border-bottom: 2px solid var(--line);
 }
 .logo { font: 400 1.25rem/1 var(--vcr); color: var(--white); text-decoration: none; white-space: nowrap; }
 .logo em { font: 400 0.55rem var(--pix); font-style: normal; letter-spacing: 0.14em; text-transform: uppercase; color: var(--grey); margin-left: 0.6rem; vertical-align: 0.25em; }
