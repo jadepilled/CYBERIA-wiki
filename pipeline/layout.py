@@ -2,17 +2,19 @@
 
     python pipeline/layout.py --render <trimmed render folder> [--all] [--only AKM]
 
-Creates pipeline/work/<category>/<Class>/model.glb + item.json for every wiki page with a
-`class` (or, with --all, every public config class that has a model), applying the class's
+Creates pipeline/work/<category>/<Class>/model.glb (for Blender) + web.glb (served on the wiki, the same
+single LOD with lossless WebP textures stored once each) + item.json for every class the wiki has a
+page for (every item in a mission's economy in data/missions, plus hand-written pages with a
+`class`; with --all, every public config class that has a model), applying the class's
 hiddenSelectionsTextures so colour variants render correctly. Then run blender_render.py.
 
 Weapons are assembled from their proxies: each proxy in the model marks an attachment slot, and
-the attachment PureZ spawns there most often (buttstock, handguard and magazine by default;
+the attachment CYBERIA spawns there most often (buttstock, handguard and magazine by default;
 --slots to change) is merged into the GLB at the proxy's position and orientation.
 
 Binarised (ODOL) models are decoded on the fly by odol.py, so the render folder can be used as is.
 """
-import argparse, glob, json, os, re, sys
+import argparse, glob, json, os, re, sys, traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -39,13 +41,48 @@ def front_matter(path):
     return meta
 
 
-def wiki_items():
+def missions():
+    """Every mission in data/missions (and the old single data/mission.json)."""
+    out = []
+    for path in sorted(glob.glob(os.path.join(ROOT, "data", "missions", "*.json"))) + [os.path.join(ROOT, "data", "mission.json")]:
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                out.append(json.load(f).get("purez", {}))
+    return out
+
+
+def wiki_items(cfg):
+    """Classes the wiki has pages for: hand-written pages with a class, and every economy item of every mission.
+    Categories follow build.py so renders land where the pages look for them (media/renders/<category>/)."""
     out = {}
     for path in glob.glob(os.path.join(ROOT, "content", "**", "*.md"), recursive=True):
         meta = front_matter(path)
         if meta.get("class"):
             cat = meta.get("category") or os.path.relpath(path, os.path.join(ROOT, "content")).split(os.sep)[0]
             out[meta["class"]] = {"category": cat, "model": meta.get("model")}
+    try:
+        sys.path.insert(0, ROOT)
+        try:
+            import build
+        except ModuleNotFoundError:   # build.py imports jinja2 and markdown; only its pure category rules are needed here
+            import types
+            for mod, names in (("markdown", ["Markdown"]), ("jinja2", ["Environment", "FileSystemLoader", "Undefined", "select_autoescape"])):
+                if mod not in sys.modules:
+                    stub = types.ModuleType(mod)
+                    for n in names:
+                        setattr(stub, n, object)
+                    sys.modules[mod] = stub
+            import build
+        vehicle_slots = {a.lower() for c in cfg.values() if set(c.get("_lineage") or []) & build.VEHICLE_BASES
+                         for a in c.get("attachments") or [] if not re.search(r"(?i)barrel|cargo|crate|material|canister|planks|sheets|logs", a)}
+        categorise = lambda cls, t: build.wiki_category(cls, t, (cfg.get(cls) or {}).get("inventorySlot") or (), vehicle_slots)
+    except Exception as e:   # build.py needs jinja2 + markdown; without them fall back to the model path
+        print(f"note: categories from model paths ({type(e).__name__}: {e}); install requirements.txt for the wiki's own categories")
+        categorise = lambda cls, t: category_for((cfg.get(cls) or {}).get("model"))
+    for m in missions():
+        for cls, t in m.get("types", {}).items():
+            if cls not in out and (cfg.get(cls) or {}).get("model"):
+                out[cls] = {"category": categorise(cls, t), "model": None}
     return out
 
 
@@ -70,15 +107,16 @@ def model_key(model):
 
 
 def spawn_groups():
-    path = os.path.join(ROOT, "data", "mission.json")
-    if not os.path.exists(path):
-        return {}
-    with open(path, encoding="utf-8") as f:
-        return json.load(f).get("purez", {}).get("spawnable", {})
+    """Attachment spawn groups merged across missions (the first mission wins for a weapon)."""
+    out = {}
+    for m in missions():
+        for cls, g in m.get("spawnable", {}).items():
+            out.setdefault(cls, g)
+    return out
 
 
 def pick_attachments(cls, c, lod, cfg, by_model, spawnable, slots):
-    """Attachment per proxy slot: the one PureZ fits most often, else the first the config allows.
+    """Attachment per proxy slot: the one CYBERIA fits most often, else the first the config allows.
     Returns [{slot, class, proxy, origin, frame}]."""
     chances = {}   # attachment class -> chance it spawns on this weapon
     for g in (spawnable.get(cls) or {}).get("groups", []):
@@ -119,19 +157,32 @@ def main():
     ap.add_argument("--all", action="store_true", help="every public config class with a model")
     ap.add_argument("--only")
     ap.add_argument("--slots", default=",".join(DEFAULT_SLOTS), help="attachment slots merged into weapon renders (comma list, '' for none)")
+    ap.add_argument("--web-tex", type=int, default=0, help="longest texture side in the web GLB (0 = as in the game files)")
+    ap.add_argument("--web-lossy", type=int, default=0, help="WebP quality for the web GLB textures (0 = lossless)")
+    ap.add_argument("--no-web", action="store_true", help="skip the web GLB")
     ap.add_argument("--proxy-frame", default="triangle", choices=["identity", "triangle"],
                     help="rotate attachments by the proxy's transform (the default; it comes straight from the ODOL file), or only move them to its origin")
     a = ap.parse_args()
     slots = [x.strip().lower() for x in a.slots.split(",") if x.strip()]
 
+    if not os.path.isdir(a.render):
+        sys.exit(f"render folder not found: {a.render}\n"
+                 "In Git Bash backslashes are stripped from arguments: write the path with forward slashes "
+                 "(F:/CYBERIA/CYBERIA-render) or in single quotes.")
+    if not os.path.isdir(os.path.join(a.render, "DZ")) and not os.path.isdir(os.path.join(a.render, "dz")):
+        print(f"warning: no DZ folder under {a.render}; model paths like dz\\weapons\\... will not resolve")
     cfg = configs()
-    items = wiki_items()
+    items = wiki_items(cfg)
     if a.all:
         for cls, c in cfg.items():
             if c.get("model") and cls not in items:
                 items[cls] = {"category": category_for(c["model"]), "model": None}
-    if a.only:
-        items = {k: v for k, v in items.items() if k == a.only}
+    if a.only:   # exact class name first, else any class containing the text
+        exact = {k: v for k, v in items.items() if k.lower() == a.only.lower()}
+        items = exact or {k: v for k, v in items.items() if a.only.lower() in k.lower()}
+    if not items:
+        sys.exit("nothing to prepare: no classes found (is data/configs.json present?)")
+    print(f"{len(items)} classes to prepare from {a.render}")
 
     files = p3d.Files(a.render)
     by_model = {}
@@ -149,7 +200,7 @@ def main():
         src = files.find(model) or files.find(model + ".p3d")
         if not src:
             stats["missing file"] += 1
-            print(f"missing  {cls}: {model}")
+            print(f"missing  {cls}: {model}", flush=True)
             continue
         out_dir = os.path.join(a.work, it["category"], cls)
         hidden = dict(zip([s.lower() for s in c.get("hiddenSelections") or []], c.get("hiddenSelectionsTextures") or []))
@@ -157,7 +208,9 @@ def main():
         try:
             lod = p3d.best_lod(p3d.read_p3d(src))
             if not lod:
-                raise ValueError("no visual LOD")
+                stats["empty"] = stats.get("empty", 0) + 1
+                print(f"empty    {cls}: {model} has no visual geometry ({os.path.getsize(src)} bytes)", flush=True)
+                continue
             parts, fitted = [], []
             if it["category"] == "weapons" and slots and c.get("attachments"):
                 for att in pick_attachments(cls, c, lod, cfg, by_model, spawnable, slots):
@@ -174,19 +227,37 @@ def main():
                                   "hidden": dict(zip([x.lower() for x in ac.get("hiddenSelections") or []], ac.get("hiddenSelectionsTextures") or [])),
                                   "mats": dict(zip([x.lower() for x in ac.get("hiddenSelections") or []], ac.get("hiddenSelectionsMaterials") or []))})
                     fitted.append({k: att[k] for k in ("slot", "class", "proxy", "chance")} | {"origin": [round(x, 4) for x in att["origin"]]})
-            info = p3d.export(lod, os.path.join(out_dir, "model.glb"), files, hidden, mats, parts)
+            info = p3d.export(lod, os.path.join(out_dir, "model.glb"), files, hidden, mats, parts, encoding={"png_level": 1})
+            # clothing: the model worn on the survivor (ClothingTypes.male) is rendered too, as the "worn" view
+            worn = (c.get("ClothingTypes") or c.get("clothingtypes") or {})
+            worn = worn.get("male") or worn.get("female") if isinstance(worn, dict) else None
+            wsrc = files.find(worn) if worn else None
+            if wsrc:
+                wlod = p3d.best_lod(p3d.read_p3d(wsrc))
+                if wlod:
+                    p3d.export(wlod, os.path.join(out_dir, "wear.glb"), files, hidden, mats, None, encoding={"png_level": 1})
+                    info["worn"] = worn
+            elif worn:
+                print(f"missing  {cls} worn model: {worn}", flush=True)
+            if not a.no_web:
+                p3d.export(lod, os.path.join(out_dir, "web.glb"), files, hidden, mats, parts,
+                           encoding={"fmt": "webp", "lossless": not a.web_lossy, "quality": a.web_lossy or 90, "max_size": a.web_tex})
+                info["web_bytes"] = os.path.getsize(os.path.join(out_dir, "web.glb"))
             with open(os.path.join(out_dir, "item.json"), "w", encoding="utf-8") as f:
                 json.dump({"class": cls, "category": it["category"], "model": model, "hidden": hidden, "fitted": fitted, **info}, f, indent=1)
             stats["converted"] += 1
             extra = f" + {', '.join(x['class'] for x in fitted)}" if fitted else ""
-            print(f"ok       {it['category']}/{cls} ({info['faces']} faces){extra}")
+            size = f", web {info['web_bytes'] / 1e6:.1f} MB" if info.get("web_bytes") else ""
+            print(f"ok       {it['category']}/{cls} ({info['faces']} faces{size}){extra}", flush=True)
         except NotImplementedError as e:
             stats["odol"] += 1
-            print(f"odol     {cls}: {e}")
+            print(f"odol     {cls}: {e}", flush=True)
         except Exception as e:
             stats["failed"] += 1
-            print(f"failed   {cls}: {e}")
+            tb = traceback.extract_tb(e.__traceback__)[-1]
+            print(f"failed   {cls}: {type(e).__name__}: {e}  [{os.path.basename(tb.filename)}:{tb.lineno} in {tb.name}]", flush=True)
     print(stats)
+    print(f"work tree: {a.work}  (next: pipeline\\render.bat, or blender -b --factory-startup -P pipeline/blender_render.py -- --work {a.work} --out media)")
 
 
 if __name__ == "__main__":

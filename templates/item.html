@@ -26,6 +26,13 @@
     {% else %}
       <div class="media-empty"><span>Render pending</span></div>
     {% endif %}
+    {% if item.media.views %}
+    <div class="views" role="tablist" aria-label="Views">
+      {% if item.media.model %}<button type="button" data-view="model" aria-pressed="true"><span>3D</span></button>{% endif %}
+      <button type="button" data-view="{{ item.media.image }}" aria-pressed="{{ 'false' if item.media.model else 'true' }}"><img src="{{ item.media.image }}" alt="" loading="lazy"></button>
+      {% for v in item.media.views %}<button type="button" data-view="{{ v.src }}" aria-pressed="false" title="{{ v.name }}"><img src="{{ v.src }}" alt="{{ v.name }}" loading="lazy"></button>{% endfor %}
+    </div>
+    {% endif %}
   </figure>
   {% endif %}
 
@@ -47,6 +54,17 @@
   </dl>
 </div>
 
+{% if item.media.images | length > 1 %}
+<details class="block" id="images" open>
+  <summary><h2>Images</h2></summary>
+  <div class="gallery-bar"><span class="muted">{{ item.media.images | length }} renders</span>
+    <div class="seg" role="group" aria-label="Layout"><button type="button" data-gallery="tiles" aria-pressed="true">Tiles</button><button type="button" data-gallery="list" aria-pressed="false">List</button></div></div>
+  <ul class="gallery tiles">
+    {% for im in item.media.images %}<li><a href="{{ im.src }}" target="_blank" rel="noopener"><img src="{{ im.src }}" alt="{{ page.title }}, {{ im.name | lower }}" loading="lazy"></a><figcaption>{{ im.name }}</figcaption></li>{% endfor %}
+    {% if item.media.icon %}<li><a href="{{ item.media.icon }}" target="_blank" rel="noopener"><img src="{{ item.media.icon }}" alt="{{ page.title }} icon" loading="lazy"></a><figcaption>Icon</figcaption></li>{% endif %}
+  </ul>
+</details>
+{% endif %}
 {% if W and W.sounds %}
 <details class="block" open>
   <summary><h2>Sound</h2></summary>
